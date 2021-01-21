@@ -2,6 +2,7 @@
 # python factory module
 import subprocess
 import json
+import os
 
 # third party module
 import xml.etree.ElementTree as ET
@@ -9,6 +10,19 @@ import xml.etree.ElementTree as ET
 # local module
 
 class Inventroy:
+
+    def getBmcMac(self):
+        cmd = 'ipmitool lan print'
+        mac = None
+        try:
+            result = subprocess.run(cmd.split(), universal_newlines=True, stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            print('ipmitool not installed.')
+        for line in result.stdout.splitlines():
+            if 'MAC Address' in line:
+                sep = line.find(':')
+                mac = line[sep+1:].strip()
+        return mac
 
     def getNics(self):
         """ use lshw -class network -xml
@@ -132,6 +146,22 @@ class Inventroy:
             cpu = self.__map_xml_dict(module, attribs)
             cpus.append(cpu)
         return cpus
+
+    def getNvmes(self):
+        """ lshw don't report serial number and do not have the model name
+        """
+        block_root = '/sys/block/'
+        path = os.walk(block_root)
+        mvmes = []
+        for root, dirs, files in path:
+            for dir in dirs:
+                nvme = dict()
+                attribs = 'model serial firmware_rev address'.split()
+                for attr in attribs:
+                    nvme[attr] = open(dir + '/device/' + attr).read()
+                nvmes.append(nvme)
+        return nvmes
+
 
     def __map_xml_dict(self, element, attrs:list):
         """ store the xml elementry tree attributes into dictionary

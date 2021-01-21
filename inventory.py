@@ -3,6 +3,7 @@
 import subprocess
 import json
 import os
+import logging
 
 # third party module
 import xml.etree.ElementTree as ET
@@ -28,12 +29,11 @@ class Inventroy:
         """ use lshw -class network -xml
         """
         try:
-            # cmd = "lshw -class memory -xml"
-            # result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE)
-            with open('seeds/lshw_net.xml') as f:
-                result = f.read()
+            cmd = "lshw -class network -xml"
+            result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE).stdout
+            # result = open('seeds/lshw_net.xml').read()
         except FileNotFoundError:
-            print("Can't find the lshw executable")
+            logging.error("Can't find the lshw executable")
 
         root = ET.fromstring(result)
         devs = root.findall('node')
@@ -54,12 +54,11 @@ class Inventroy:
 
     def getStorage(self):
         try:
-            # cmd = "lshw -class storage -xml"
-            # result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE)
-            with open('seeds/lshw_raid.xml') as f:
-                result = f.read()
+            cmd = "lshw -class storage -xml"
+            result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE).stdout
+            # result = open('seeds/lshw_raid.xml').read()
         except FileNotFoundError:
-            print("Can't find the lshw executable")
+            logging.error("Can't find the lshw executable")
 
         root = ET.fromstring(result)
         devs = root.findall('node')
@@ -84,12 +83,11 @@ class Inventroy:
 
     def getDisks(self):
         try:
-            # cmd = "lshw -class disk -xml"
-            # result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE)
-            with open('seeds/lshw_disk.xml') as f:
-                result = f.read()
+            cmd = "lshw -class disk -xml"
+            result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE).stdout
+            # result= open('seeds/lshw_disk.xml').read()
         except FileNotFoundError:
-            print("Can't find the lshw executable")
+            logging.error("Can't find the lshw executable")
 
         root = ET.fromstring(result)
         devs = root.findall('node')
@@ -108,34 +106,32 @@ class Inventroy:
 
     def getMemory(self):
         try:
-            # cmd = "lshw -class memory -xml"
-            # result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE)
-            with open('seeds/lshw_mem.xml') as f:
-                result = f.read()
+            cmd = "lshw -class memory -xml"
+            result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE).stdout
+            # result = open('seeds/lshw_mem.xml').read()
         except FileNotFoundError:
-            print("Can't find the lshw executable")
+            logging.error("Can't find the lshw executable")
 
         root = ET.fromstring(result)
         devs = root.findall('node/node')
         mem = dict()
         mems = []
         for node in devs:
-            # print(module.tag, module.attrib)
+            # print(node.tag, node.attrib)
             size = node.find('size')
             if size is not None:
                 attribs = 'description product vendor physid serial slot size'.split()
-                mem = self.__map_xml_dict(module, attribs)
+                mem = self.__map_xml_dict(node, attribs)
                 mems.append(mem)
         return mems
 
-    def getCpu(self):
+    def getCpus(self):
         try:
-            # cmd = "lshw -class processor -xml"
-            # result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE)
-            with open('seeds/lshw_proc.xml') as f:
-                result = f.read()
+            cmd = "lshw -class processor -xml"
+            result=subprocess.run(cmd.split(), universal_newlines = True, stdout=subprocess.PIPE).stdout
+            # result = open('seeds/lshw_proc.xml').read()
         except FileNotFoundError:
-            print("Can't find the lshw executable")
+            logging.error("Can't find the lshw executable")
 
         root = ET.fromstring(result)
         cpudevs = root.findall('node')
@@ -152,14 +148,15 @@ class Inventroy:
         """
         block_root = '/sys/block/'
         path = os.walk(block_root)
-        mvmes = []
+        nvmes = []
         for root, dirs, files in path:
             for dir in dirs:
-                nvme = dict()
-                attribs = 'model serial firmware_rev address'.split()
-                for attr in attribs:
-                    nvme[attr] = open(dir + '/device/' + attr).read()
-                nvmes.append(nvme)
+                if 'nvme' in dir:
+                    nvme = dict()
+                    attribs = 'model serial firmware_rev address'.split()
+                    for attr in attribs:
+                        nvme[attr] = open(dir + '/device/' + attr).read()
+                    nvmes.append(nvme)
         return nvmes
 
 
@@ -175,14 +172,30 @@ class Inventroy:
                     value[attr] = str(int(int(value[attr])/1024/1024/1024)) + 'G'
 
         return value
+
+    def getSysInventory(self):
+        sys = dict()
+        sys['bmc'] = self.getBmcMac()
+        sys['nvmes'] = self.getNvmes()
+        sys['nics'] = self.getNics()
+        sys['storage'] = self.getStorage()
+        sys['cpus'] = self.getCpus()
+        sys['mems'] = self.getMemory()
+        sys['disks'] = self.getDisks()
+        return sys
            
  
 
+#print(Inventroy().getCpus())
 #print(Inventroy().getMemory()) 
-#print(Inventroy().getCpu())
-#print(Inventroy().getNic())
+#print(Inventroy().getNics())
 #print(Inventroy().getStorage())
-print(Inventroy().getDisks())
+#print(Inventroy().getDisks())
+#print(Inventroy().getNvmes())
+
+print(Inventroy().getSysInventory())
+
+
 
 
 

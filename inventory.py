@@ -4,13 +4,15 @@ import subprocess
 import json
 import os
 import logging
+import requests
+import datetime
 
 # third party module
 import xml.etree.ElementTree as ET
 
 # local module
 
-class Inventroy:
+class Inventory:
 
     def getBmcMac(self):
         cmd = 'ipmitool lan print'
@@ -174,26 +176,33 @@ class Inventroy:
         return value
 
     def getSysInventory(self):
-        sys = dict()
-        sys['bmc'] = self.getBmcMac()
-        sys['nvmes'] = self.getNvmes()
-        sys['nics'] = self.getNics()
-        sys['storage'] = self.getStorage()
-        sys['cpus'] = self.getCpus()
-        sys['mems'] = self.getMemory()
-        sys['disks'] = self.getDisks()
-        return sys
+        self.sys['bmc'] = self.getBmcMac()
+        self.sys['timestamp'] = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+        self.sys['nvmes'] = self.getNvmes()
+        self.sys['nics'] = self.getNics()
+        self.sys['storage'] = self.getStorage()
+        self.sys['cpus'] = self.getCpus()
+        self.sys['mems'] = self.getMemory()
+        self.sys['disks'] = self.getDisks()
+        return self
            
+    def sendInventory(self, url, data):
+        """ data: varialbe holding json structure to host
+        """
+        requests.post(url, data=json.dumps(data))
+
+    def __str__(self):
+        return json.dumps(self.sys)
+    
+    def __init__(self):
+        self.sys = dict()
+
+
  
 
-#print(Inventroy().getCpus())
-#print(Inventroy().getMemory()) 
-#print(Inventroy().getNics())
-#print(Inventroy().getStorage())
-#print(Inventroy().getDisks())
-#print(Inventroy().getNvmes())
-
-print(Inventroy().getSysInventory())
+# print(Inventory().getSysInventory())
+inv = json.loads(open('inv.json').read())
+Inventory().sendInventory('http://localhost:4567/inventories/create', inv)
 
 
 

@@ -6,6 +6,7 @@ import os
 import logging
 import requests
 import datetime
+import argparse
 
 # third party module
 import xml.etree.ElementTree as ET
@@ -198,11 +199,17 @@ class Inventory:
         self.sys = dict()
 
 
- 
+if __name__ == "__main__":
+    parser=argparse.ArgumentParser(description='Collecting system inventories')
+    parser.add_argument('--target', help='send the inventories to remote http service')
+    parser.add_argument('--print', action='store_true', help='print the collected json')
+    args = parser.parse_args()
+    inv=Inventory().getSysInventory()
+    if args.print:
+        print(inv)
+    if args.target:
+        inv.sendInventory(args.target, inv.sys)
 
-# print(Inventory().getSysInventory())
-inv = json.loads(open('inv.json').read())
-Inventory().sendInventory('http://localhost:4567/inventories/create', inv)
 
 
 

@@ -158,7 +158,7 @@ class Inventory:
                     nvme = dict()
                     attribs = 'model serial firmware_rev address'.split()
                     for attr in attribs:
-                        nvme[attr] = open(dir + '/device/' + attr).read()
+                        nvme[attr] = open(block_root + dir + '/device/' + attr).read()
                     nvmes.append(nvme)
         return nvmes
 

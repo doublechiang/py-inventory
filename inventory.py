@@ -80,6 +80,12 @@ class Inventory:
                     if pcibusno == '00':
                         continue
                 
+            # NVME will be listed in the stroage contoller, ignore it.
+            if node.find('description') is not None:
+                disc=node.find('description').text
+                if 'Non-Volatile memory' in disc:
+                    continue
+
             stor= self.__map_xml_dict(node, attribs)
             stors.append(stor)
         return stors

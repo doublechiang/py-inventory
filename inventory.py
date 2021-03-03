@@ -201,18 +201,25 @@ class Inventory:
     def __str__(self):
         return json.dumps(self.sys)
     
-    def __init__(self):
+    def __init__(self, data=None):
         self.sys = dict()
+        if data is not None:
+            self.sys = data
 
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description='Collecting system inventories')
     parser.add_argument('--target', help='send the inventories to remote http service')
-    parser.add_argument('--print', action='store_true', help='print the collected json')
+    parser.add_argument('--print', action='store_true', help='print the collected json，redirect to a json file')
+    parser.add_argument('--file', help='Load a previous saved json file')
     args = parser.parse_args()
-    inv=Inventory().getSysInventory()
+    if args.file:
+        inv=Inventory(json.loads(open(args.file).read()))
+    else:
+        inv=Inventory().getSysInventory()
     if args.print:
         print(inv)
+        
     if args.target:
         inv.sendInventory(args.target, inv.sys)
 

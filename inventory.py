@@ -17,7 +17,7 @@ class Inventory:
 
     def getBmcMac(self):
         cmd = 'ipmitool lan print'
-        mac = None
+        mac = ""
         try:
             result = subprocess.run(cmd.split(), universal_newlines=True, stdout=subprocess.PIPE)
         except FileNotFoundError:
@@ -27,6 +27,20 @@ class Inventory:
                 sep = line.find(':')
                 mac = line[sep+1:].strip()
         return mac
+
+    def getSys(self):
+        cmd = 'dmidecode --type system'
+        product = ""
+        try:
+            result = subprocess.run(cmd.split(), universal_newlines=True, stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            print('dmidecode not installed.')
+        for line in result.stdout.splitlines():
+            if 'Product Name' in line:
+                sep = line.find(':')
+                product = line[sep+1:].strip()
+        return product
+            
 
     def getNics(self):
         """ use lshw -class network -xml
@@ -191,6 +205,7 @@ class Inventory:
         self.sys['cpus'] = self.getCpus()
         self.sys['mems'] = self.getMemory()
         self.sys['disks'] = self.getDisks()
+        self.sys['product'] = self.getSys()
         return self
            
     def sendInventory(self, url, data):
